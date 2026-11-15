@@ -1,5 +1,6 @@
 import express from "express";
 import { analyze } from "./src/engine.js";
+import { assertPublicUrl } from "./src/guard.js";
 
 const app = express();
 app.use(express.static("public"));
@@ -7,10 +8,9 @@ app.use(express.static("public"));
 app.get("/api/analyze", async (req, res) => {
   const url = req.query.url;
   try {
-    const parsed = new URL(url);
-    if (!["http:", "https:"].includes(parsed.protocol)) throw new Error();
-  } catch {
-    return res.status(400).json({ error: "Please enter a valid http(s) URL" });
+    await assertPublicUrl(url);
+  } catch (err) {
+    return res.status(400).json({ error: err.message || "Invalid URL" });
   }
   try {
     res.json(await analyze(url));
